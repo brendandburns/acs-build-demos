@@ -15,15 +15,24 @@
 
 . $(dirname ${BASH_SOURCE})/../util.sh
 
+kubectl create namespace demos > /dev/null || true
+
 desc "Create a service that fronts any version of this demo"
 run "cat $(relative svc.yaml)"
-run "kubectl --namespace=demos create -f $(relative svc.yaml)"
+run "kubectl --namespace=demos apply -f $(relative svc.yaml)"
 
-desc "Run v1 of our app"
-run "cat $(relative rc-v1.yaml)"
-run "kubectl --namespace=demos create -f $(relative rc-v1.yaml)"
+desc "Deploy v1 of our app"
+run "cat $(relative deployment.yaml)"
+run "kubectl --namespace=demos apply -f $(relative deployment.yaml)"
+
+# The output of describe is too wide, uncomment the following if needed.
+# desc "Check it"
+# run "kubectl --namespace=demos describe deployment deployment-demo"
 
 tmux new -d -s my-session \
-    "sleep 10; $(dirname ${BASH_SOURCE})/split1_update.sh" \; \
-    split-window -h -d "$(dirname $BASH_SOURCE)/split1_hit_svc.sh" \; \
+    "$(dirname $BASH_SOURCE)/split1_control.sh" \; \
+    split-window -v -p 66 "$(dirname ${BASH_SOURCE})/split1_hit_svc.sh" \; \
+    split-window -v "$(dirname ${BASH_SOURCE})/split1_watch.sh v1" \; \
+    split-window -h -d "$(dirname ${BASH_SOURCE})/split1_watch.sh v2" \; \
+    select-pane -t 0 \; \
     attach \;

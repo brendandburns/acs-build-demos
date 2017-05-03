@@ -69,6 +69,6 @@ function relative() {
     done
 }
 
-SSH_NODE=$(kubectl get nodes | tail -1 | cut -f1 -d' ')
+# SSH_NODE=$(kubectl get nodes | tail -1 | cut -f1 -d' ')
 
 trap "echo" EXIT

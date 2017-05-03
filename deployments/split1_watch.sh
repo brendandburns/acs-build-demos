@@ -15,7 +15,20 @@
 
 . $(dirname ${BASH_SOURCE})/../util.sh
 
-desc "Do a rolling update to v2"
-run "cat $(relative rc-v2.yaml)"
-run "kubectl --namespace=demos rolling-update \\
-    update-demo-v1 -f $(relative rc-v2.yaml) --update-period=5s"
+target="$1"
+
+while true; do
+  kubectl --namespace=demos get rs -l demo=deployment \
+      -o go-template='{{range .items}}{{.metadata.name}} {{.metadata.labels}}{{"\n"}}{{end}}' \
+      | while read NAME LABELS; do
+    if echo "$LABELS" | grep -q "$target"; then
+      trap "exit" INT
+      while true; do
+        kubectl --namespace=demos get rs "$NAME" \
+            -o go-template="$target Desired: {{.spec.replicas}} Running: {{.status.replicas}}{{\"\n\"}}"
+        sleep 0.3
+      done
+      exit 0
+    fi
+  done
+done

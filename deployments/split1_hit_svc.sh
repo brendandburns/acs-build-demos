@@ -15,12 +15,15 @@
 
 . $(dirname ${BASH_SOURCE})/../util.sh
 
-IP=$(kubectl --namespace=demos get svc update-demo \
+export HTTP=`yq .clusters[].cluster.server ~/.kube/config | grep build`
+HTTP=${HTTP//\"}
+export MASTER=${HTTP:8}
+
+IP=$(kubectl --namespace=demos get svc deployment-demo \
         -o go-template='{{.spec.clusterIP}}')
 
-run "ssh -i .ssh/id_rsa azureuser@$SSH_NODE --command '\\
-    while true; do \\
-        curl --connect-timeout 1 -s $IP; \\
-        sleep 0.5; \\
-    done \\
-    '"
+run "ssh azureuser@${MASTER} '\
+    while true; do \
+        curl --connect-timeout 1 -s $IP; \
+        sleep 0.5; \
+    done'"
